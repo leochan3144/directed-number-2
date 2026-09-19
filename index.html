@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Addition and substraction of directed number</title>
+    <title>Addition and subtraction of directed number</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     
@@ -13,6 +13,7 @@
             background-color: #f8fafc;
             touch-action: manipulation;
             overflow-x: hidden;
+            user-select: none;
         }
 
         .number-line-container {
@@ -93,7 +94,6 @@
             box-shadow: 0 4px 0 #cbd5e1;
             transition: all 0.1s;
             cursor: pointer;
-            user-select: none;
         }
         .numpad-btn:active {
             transform: translateY(4px);
@@ -114,10 +114,9 @@
         }
 
         /* Fixed Static Star Display */
-        .star {
+        .win-star {
             position: fixed;
             color: #fbbf24;
-            user-select: none;
             pointer-events: none;
             z-index: 9999;
             filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.8));
@@ -143,7 +142,7 @@
     
     <header class="w-full flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
         <h1 class="text-xl md:text-2xl font-black text-slate-700 mb-4 md:mb-0 text-center md:text-left">
-            Addition and substraction of directed number
+            Addition and subtraction of directed number
         </h1>
         
         <div class="flex flex-col gap-2">
@@ -162,7 +161,7 @@
         </div>
     </header>
 
-    <main class="w-full bg-white rounded-3xl shadow-lg border border-slate-200 p-4 md:p-8 flex flex-col items-center min-h-[600px]">
+    <main class="w-full bg-white rounded-3xl shadow-lg border border-slate-200 p-4 md:p-8 flex flex-col items-center min-h-[600px] relative">
         
         <div class="text-center mb-6">
             <h2 class="text-lg font-bold text-slate-400 uppercase tracking-widest mb-2">Solve</h2>
@@ -188,6 +187,7 @@
             </div>
         </div>
 
+        <!-- Hidden Input Section -->
         <div id="input-section" class="w-full max-w-sm flex flex-col items-center hidden transition-opacity duration-300 mt-4">
             <div class="w-full bg-slate-800 text-white text-4xl font-mono font-bold rounded-xl p-4 mb-4 text-right shadow-inner min-h-[76px] flex items-center justify-end overflow-hidden border-4 border-slate-700" id="input-display">
             </div>
@@ -211,25 +211,12 @@
         </div>
 
         <!-- Feedback Message Box -->
-        <div id="feedback-modal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-white">
-                <h2 id="feedback-title" class="text-5xl font-black mb-4"></h2>
-                <p id="feedback-msg" class="text-xl text-slate-600 mb-8 font-bold"></p>
-                <button onclick="nextQuestion()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 text-2xl">
-                    Continue
-                </button>
-            </div>
-        </div>
-
-        <!-- Win Screen Overlay -->
-        <div id="win-overlay" class="hidden fixed inset-0 bg-white/80 z-[9000] flex flex-col items-center justify-center backdrop-blur-sm">
-            <div class="bg-white p-8 rounded-3xl shadow-2xl border-4 border-yellow-400 text-center max-w-md w-full mx-4 z-[9001]">
-                <h1 class="text-4xl font-black text-yellow-500 mb-4">MASTERED!</h1>
-                <p class="text-lg text-slate-700 font-bold mb-8">You scored 10 marks in BOTH levels!</p>
-                <button onclick="resetGame()" class="bg-blue-500 hover:bg-blue-600 text-white font-black py-4 px-8 rounded-xl shadow-lg transition-all active:scale-95 text-xl w-full">
-                    Play Again
-                </button>
-            </div>
+        <div id="feedback-modal" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-50 p-4 rounded-3xl backdrop-blur-sm">
+            <h2 id="feedback-title" class="text-5xl font-black mb-4"></h2>
+            <p id="feedback-msg" class="text-2xl text-slate-600 mb-8 font-bold"></p>
+            <button onclick="nextQuestion()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-12 rounded-xl shadow-lg transition-all active:scale-95 text-2xl">
+                Continue
+            </button>
         </div>
 
     </main>
@@ -244,13 +231,14 @@
         level: 1,
         scores: { 1: 0, 2: 0 },
         currentQuestion: {
-            terms: [], // { displayStr: string, vectorValue: number }
+            terms: [], 
             finalAnswer: 0
         },
         bankVectors: [], 
         placedVectors: [], 
         inputValue: "",
-        audioCtx: null
+        audioCtx: null,
+        hasWon: false
     };
 
     const DOM = {
@@ -262,8 +250,7 @@
         inputDisplay: document.getElementById('input-display'),
         modal: document.getElementById('feedback-modal'),
         modalTitle: document.getElementById('feedback-title'),
-        modalMsg: document.getElementById('feedback-msg'),
-        winOverlay: document.getElementById('win-overlay')
+        modalMsg: document.getElementById('feedback-msg')
     };
 
     function initAudio() {
@@ -280,7 +267,7 @@
         const osc = state.audioCtx.createOscillator();
         const gainNode = state.audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, state.audioCtx.currentTime);
+        osc.frequency.setValueAtTime(600, state.audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(1200, state.audioCtx.currentTime + 0.1);
         
         gainNode.gain.setValueAtTime(0, state.audioCtx.currentTime);
@@ -313,8 +300,6 @@
     function init() {
         renderNumberLine();
         setLevel(1);
-        
-        // Init audio on first interaction
         document.body.addEventListener('click', initAudio, { once: true });
         document.body.addEventListener('dragstart', initAudio, { once: true });
     }
@@ -350,7 +335,7 @@
 
     function getRandomInt(min, max) {
         let val = 0;
-        while (val === 0) { // Avoid zero for terms
+        while (val === 0) { 
             val = Math.floor(Math.random() * (max - min + 1)) + min;
         }
         return val;
@@ -382,7 +367,7 @@
                 vectorValue: val1
             });
 
-            // Generate Subsequent Terms
+            // Generate Subsequent Terms (e.g., -(-7) or +(+5))
             let intermediateValid = true;
             for (let i = 1; i < numTerms; i++) {
                 let op = Math.random() > 0.5 ? '+' : '-';
@@ -416,6 +401,7 @@
     }
 
     function startNewQuestion() {
+        if(state.hasWon) return; // Stop if game is won
         state.currentQuestion = generateQuestionData();
         state.placedVectors = [];
         clearInput();
@@ -459,7 +445,7 @@
         el.id = vecData.id;
         el.innerHTML = createVectorArrowHTML(vecData.value, isBank);
         
-        // Z-Index calculation: Smaller vectors on top
+        // CRUCIAL REQUIREMENT: Set z-index inversely proportional to length so smaller arrows overlay larger ones
         const calculatedZIndex = 100 - Math.abs(vecData.value);
         el.style.zIndex = calculatedZIndex;
         
@@ -483,8 +469,8 @@
             el.style.height = '24px';
         } else {
             el.style.position = 'absolute';
-            // Align visually near the axis
-            el.style.top = '72px'; // Axis is at 100px. Arrow is 24px high.
+            // Align precisely above the number line ticks (ticks are at top: 96px, arrow height is 24px)
+            el.style.top = '72px'; 
             el.style.height = '24px';
         }
 
@@ -496,8 +482,10 @@
         let idCounter = 1;
         state.currentQuestion.terms.forEach(term => {
             state.bankVectors.push({ id: `vec-${idCounter++}`, value: term.vectorValue });
-            state.bankVectors.push({ id: `vec-${idCounter++}`, value: -term.vectorValue }); // Distractor
+            // Generate a distractor vector
+            state.bankVectors.push({ id: `vec-${idCounter++}`, value: -term.vectorValue }); 
         });
+        // Shuffle
         state.bankVectors.sort(() => Math.random() - 0.5);
         refreshBankUI();
     }
@@ -576,7 +564,7 @@
 
         let currentPosition = 0;
 
-        state.placedVectors.forEach((vec, index) => {
+        state.placedVectors.forEach((vec) => {
             const startVal = currentPosition;
             const endVal = currentPosition + vec.value;
             
@@ -593,17 +581,13 @@
             arrow.style.width = `${widthPct}%`;
             arrow.style.left = `${leftPct}%`;
             
-            // Adjust stacking height slightly if needed, but mainly z-index handles it.
-            // All drop precisely at 72px so tips align perfectly with the number line
-            arrow.style.top = `72px`; 
-            
             DOM.dropZone.appendChild(arrow);
             currentPosition = endVal; 
         });
     }
 
     function checkRevealInput() {
-        // Check if placed vectors match the required vectors EXACTLY to allow input
+        // Only reveal numpad if the CORRECT number of vectors are dragged
         if (state.placedVectors.length === state.currentQuestion.terms.length) {
             
             let requiredVals = state.currentQuestion.terms.map(t => t.vectorValue).sort((a,b) => a-b);
@@ -665,13 +649,14 @@
             state.scores[state.level]++;
             updateScoreDisplay();
 
+            // Win Condition Check
             if (state.scores[1] >= 10 && state.scores[2] >= 10) {
                 triggerWinSequence();
                 return;
             }
 
             DOM.modalTitle.textContent = "Correct! 🎉";
-            DOM.modalTitle.className = "text-4xl font-black mb-4 text-green-500";
+            DOM.modalTitle.className = "text-5xl font-black mb-4 text-green-500";
             DOM.modalMsg.textContent = "Great job finding the exact destination!";
             DOM.modal.classList.remove('hidden');
         } else {
@@ -680,8 +665,8 @@
             updateScoreDisplay();
 
             DOM.modalTitle.textContent = "Oops! ❌";
-            DOM.modalTitle.className = "text-4xl font-black mb-4 text-red-500";
-            DOM.modalMsg.textContent = `That's incorrect. You arrived at ${userAnswer}, but the correct destination was ${state.currentQuestion.finalAnswer}.`;
+            DOM.modalTitle.className = "text-5xl font-black mb-4 text-red-500";
+            DOM.modalMsg.textContent = `That's incorrect. The correct answer was ${state.currentQuestion.finalAnswer}.`;
             DOM.modal.classList.remove('hidden');
             
             clearInput();
@@ -689,25 +674,26 @@
     }
 
     function triggerWinSequence() {
-        DOM.winOverlay.classList.remove('hidden');
+        state.hasWon = true;
+        DOM.modal.classList.add('hidden');
         
-        document.querySelectorAll('.star').forEach(el => el.remove());
+        // Remove any old stars if present
+        document.querySelectorAll('.win-star').forEach(el => el.remove());
 
-        const numStars = Math.floor(Math.random() * 20) + 25; 
-        
-        // Use inline SVG for high quality stars
+        // Generate static stars randomly scattered across the current page (no animation)
+        const numStars = Math.floor(Math.random() * 15) + 25; // 25 to 40 stars
         const starSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-full h-full text-yellow-400 drop-shadow-md"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>`;
 
         for (let i = 0; i < numStars; i++) {
             const star = document.createElement('div');
-            star.className = 'star';
+            star.className = 'win-star';
             star.innerHTML = starSVG;
             
-            // Random fixed positions across viewport
-            star.style.top = `${Math.random() * 92}vh`;
-            star.style.left = `${Math.random() * 92}vw`;
+            // Random static fixed positions
+            star.style.top = `${Math.random() * 90}vh`;
+            star.style.left = `${Math.random() * 95}vw`;
             
-            const size = 30 + Math.random() * 40; // 30px to 70px
+            const size = 30 + Math.random() * 40; 
             star.style.width = `${size}px`;
             star.style.height = `${size}px`;
             
@@ -716,15 +702,17 @@
             
             document.body.appendChild(star);
         }
-    }
 
-    function resetGame() {
-        state.scores[1] = 0;
-        state.scores[2] = 0;
-        updateScoreDisplay();
-        DOM.winOverlay.classList.add('hidden');
-        document.querySelectorAll('.star').forEach(el => el.remove());
-        startNewQuestion();
+        // Show a completion text box over the page (without hiding the game board)
+        const winBox = document.createElement('div');
+        winBox.className = "fixed inset-0 z-[10000] flex items-center justify-center pointer-events-none";
+        winBox.innerHTML = `
+            <div class="bg-white/95 p-8 rounded-3xl shadow-2xl border-4 border-yellow-400 text-center max-w-md w-full mx-4 pointer-events-auto backdrop-blur-md">
+                <h1 class="text-4xl font-black text-yellow-500 mb-4">MASTERED!</h1>
+                <p class="text-xl text-slate-700 font-bold mb-8">You scored 10 marks in BOTH levels!</p>
+            </div>
+        `;
+        document.body.appendChild(winBox);
     }
 
     function nextQuestion() {
